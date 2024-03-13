@@ -1,4 +1,4 @@
-# CBinaryEncoder
+# PGM Compressor 
 This program reads in data from a PGM image specified as a command line argument and encodes it into unsigned characters in a much smaller file. This program is essentially a PGM image compressor. 
 This program was written as part of a programming assignment in my C and Unix class, I just thought it was interesting enough to continue to build. 
 
