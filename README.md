@@ -1,14 +1,11 @@
 # CBinaryEncoder
-This program reads in data from a file specified from a command line argument and encodes the data into binary.
+This program reads in data from a PGM image specified as a command line argument and encodes it into unsigned characters in a much smaller file. This program is essentially a PGM image compressor. 
+This program was written as part of a programming assignment in my C and Unix class, I just thought it was interesting enough to continue to build. 
 
-# Rules
-* The first bit represents the value being positive (0) or negative (1)
-* The next 6 bits reprsent the occurence (the second number on the line), this value is decreased by 1 for encoding purposes
-* The last 10 bits represent the absolute value of the value (first number).
+# Compilation and Execution Instructions 
+* Run "make all" to compile program
+* Run "./main [input file] [output file]"
+* Program code will execute and create an output file with the compressed data inside 
 
 # Example
-Command line: ./a.out data.dat
-
-data.dat: -20 4
-
-output: 10000110000010100
+./main input.pgm output.dat
