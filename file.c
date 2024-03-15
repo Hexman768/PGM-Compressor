@@ -1,156 +1,156 @@
 #include "file.h"
 
 BLOCK2* readP6PGM(FILE *inFile, int *width, int *height, int *max, char *outputFile) {
-        FILE *outFile;
-        int i, j, y, x;
-        nWidth = (*width);
-        nHeight = (*height);
-        unsigned char *buffer = (unsigned char *)malloc(((*width) * (*height) * sizeof(unsigned char) * 3));
-        unsigned char *red = (unsigned char *)malloc(((*width) * (*height) * sizeof(unsigned char)));
-        unsigned char *green = (unsigned char *)malloc(((*width) * (*height) * sizeof(unsigned char)));
-        unsigned char *blue = (unsigned char *)malloc(((*width) * (*height) * sizeof(unsigned char)));
+    FILE *outFile;
+    int i, j, y, x;
+    nWidth = (*width);
+    nHeight = (*height);
+    unsigned char *buffer = (unsigned char *)malloc(((*width) * (*height) * sizeof(unsigned char) * 3));
+    unsigned char *red = (unsigned char *)malloc(((*width) * (*height) * sizeof(unsigned char)));
+    unsigned char *green = (unsigned char *)malloc(((*width) * (*height) * sizeof(unsigned char)));
+    unsigned char *blue = (unsigned char *)malloc(((*width) * (*height) * sizeof(unsigned char)));
 
-        size_t read = fread(buffer, sizeof(unsigned char), (*width) * (*height) * 3, inFile);
-        printf("Image Written!\n");
-        fclose(inFile);
+    size_t read = fread(buffer, sizeof(unsigned char), (*width) * (*height) * 3, inFile);
+    printf("Image Written!\n");
+    fclose(inFile);
 
-        j = 0;
-        for (i = 0; i < (*width) * (*height) * 3; i += 3) {
-                red[j] = buffer[i];
-                j++;
-        }
+    j = 0;
+    for (i = 0; i < (*width) * (*height) * 3; i += 3) {
+        red[j] = buffer[i];
+        j++;
+    }
 
-        j = 0;
-        for (i = 1; i < (*width) * (*height) * 3; i += 3) {
-                green[j] = buffer[i];
-                j++;
-        }
-        j = 0;
-        for (i = 2; i < (*width) * (*height) * 3; i += 3) {
-                blue[j] = buffer[i];
-                j++;
-        }
+    j = 0;
+    for (i = 1; i < (*width) * (*height) * 3; i += 3) {
+        green[j] = buffer[i];
+        j++;
+    }
+    j = 0;
+    for (i = 2; i < (*width) * (*height) * 3; i += 3) {
+        blue[j] = buffer[i];
+        j++;
+    }
 
     /* Creating new width and height both divisible by 8 */
-        while (nWidth % 8 != 0)
-                nWidth++;
+    while (nWidth % 8 != 0)
+        nWidth++;
 
-        while (nHeight % 8 != 0)
-                nHeight++;
+    while (nHeight % 8 != 0)
+        nHeight++;
 
-        nBlocks = ((nWidth * nHeight) / 64);
-        int nBlocks2 = 3 * nBlocks;
-        printf("Width: %d, Height: %d\n", (*width), (*height));
-        printf("nWidth: %d, nHeight: %d\n", nWidth, nHeight);
+    nBlocks = ((nWidth * nHeight) / 64);
+    int nBlocks2 = 3 * nBlocks;
+    printf("Width: %d, Height: %d\n", (*width), (*height));
+    printf("nWidth: %d, nHeight: %d\n", nWidth, nHeight);
                         //nBlocks = 9;
-        printf("Number of blocks: %d\n", nBlocks2);
+    printf("Number of blocks: %d\n", nBlocks2);
 
         BLOCK2 *data = (BLOCK2 *)malloc(sizeof(BLOCK2) * ((N * N) * nBlocks2));
         BLOCK2 *datar = (BLOCK2 *)malloc(sizeof(BLOCK2) * ((N * N) * nBlocks));
         BLOCK2 *datag = (BLOCK2 *)malloc(sizeof(BLOCK2) * ((N * N) * nBlocks));
         BLOCK2 *datab = (BLOCK2 *)malloc(sizeof(BLOCK2) * ((N * N) * nBlocks));
 
-        int count = 0;
-        for (i = 0; i < nBlocks2; i++) {
-                for (y = 0; y < N; y++) {
-                        for (x = 0; x < N; x++) {
-                                data[i].element[y][x] = buffer[count];
-                                count++;
-                        }
-                } 
-        }
-        unsigned char red_image[nHeight][nWidth];
-        unsigned char green_image[nHeight][nWidth];
-        unsigned char blue_image[nHeight][nWidth];
-        unsigned char arr[nHeight*3][nWidth*3];
-
-        for (i = 0; i < nHeight; i++) {
-                for (j = 0; j < nWidth; j++) {
-                        red_image[i][j] = 0x0;
-                        green_image[i][j] = 0x0;
-                        blue_image[i][j] = 0x0;
-                }
-        }
-
-        count = 0;
-        for (i = 0; i < nHeight * 3; i++) {
-                for (j = 0; j < nWidth * 3; j++) {
-                        arr[i][j] = buffer[count];
+int count = 0;
+for (i = 0; i < nBlocks2; i++) {
+        for (y = 0; y < N; y++) {
+                for (x = 0; x < N; x++) {
+                        data[i].element[y][x] = buffer[count];
                         count++;
                 }
+        } 
+}
+unsigned char red_image[nHeight][nWidth];
+unsigned char green_image[nHeight][nWidth];
+unsigned char blue_image[nHeight][nWidth];
+unsigned char arr[nHeight*3][nWidth*3];
+
+for (i = 0; i < nHeight; i++) {
+        for (j = 0; j < nWidth; j++) {
+                red_image[i][j] = 0x0;
+                green_image[i][j] = 0x0;
+                blue_image[i][j] = 0x0;
         }
+}
 
-        free(buffer);
-
-        printf("Data filled with zeroes\n");
-        int counter = 0;
-        for (i = 0; i < (*height); i++) {
-                for (j = 0; j < (*width); j++) {
-                        red_image[i][j] = red[counter];
-                        green_image[i][j] = green[counter];
-                        blue_image[i][j] = blue[counter];
-                        counter++;
-                }
+count = 0;
+for (i = 0; i < nHeight * 3; i++) {
+        for (j = 0; j < nWidth * 3; j++) {
+                arr[i][j] = buffer[count];
+                count++;
         }
-        free(red);
-        free(green);
-        free(blue);
-        printf("Created new image buffer\n");
+}
 
-        int nBlock = 0;
-            //nBlocks = 1;
-        for (i = 0; i <= nHeight; i += N) { // max: 360
-                for (j = 0; j <= nWidth; j += N) { // max: 464
-                                                //if (i >= N)
-                                                //    i -= N;
-                        //printf("debug check for ternary");
-                        i = i >= N ? i - N : i;
-                        for (y = 0; y < N; y++, i++) {
-                                if (j % N == 0 && j != 0)
-                                        j -= N;
-                                for (x = 0; x < N; x++, j++) { // i and j are wrong
-                                                                                                                             /* Check if boundaries are exceeded */
-                                        if (i > nHeight || j > nWidth)
-                                                continue;
-                                        datar[nBlock].element[y][x] = red_image[i][j];
-                                }
+free(buffer);
+
+printf("Data filled with zeroes\n");
+int counter = 0;
+for (i = 0; i < (*height); i++) {
+        for (j = 0; j < (*width); j++) {
+                red_image[i][j] = red[counter];
+                green_image[i][j] = green[counter];
+                blue_image[i][j] = blue[counter];
+                counter++;
+        }
+}
+free(red);
+free(green);
+free(blue);
+printf("Created new image buffer\n");
+
+int nBlock = 0;
+    //nBlocks = 1;
+for (i = 0; i <= nHeight; i += N) { // max: 360
+        for (j = 0; j <= nWidth; j += N) { // max: 464
+                                        //if (i >= N)
+                                        //    i -= N;
+                //printf("debug check for ternary");
+                i = i >= N ? i - N : i;
+                for (y = 0; y < N; y++, i++) {
+                        if (j % N == 0 && j != 0)
+                                j -= N;
+                        for (x = 0; x < N; x++, j++) { // i and j are wrong
+                                                                                                                     /* Check if boundaries are exceeded */
+                                if (i > nHeight || j > nWidth)
+                                        continue;
+                                datar[nBlock].element[y][x] = red_image[i][j];
                         }
-                        nBlock++;
                 }
+                nBlock++;
         }
+}
 
-        for (i = 0; i <= nHeight; i += N) {
-                for (j = 0; j <= nWidth; j += N) {
-                        i = i >= N ? i - N : i;
-                        for (y = 0; y < N; y++, i++) {
-                                if (j % N == 0 && j != 0)
-                                        j -= N;
-                                for (x = 0; x < N; x++, j++) {
-                                        if (i > nHeight || j > nWidth)
-                                                continue;
-                                        datag[nBlock].element[y][x] = green_image[i][j];
-                                }
+for (i = 0; i <= nHeight; i += N) {
+        for (j = 0; j <= nWidth; j += N) {
+                i = i >= N ? i - N : i;
+                for (y = 0; y < N; y++, i++) {
+                        if (j % N == 0 && j != 0)
+                                j -= N;
+                        for (x = 0; x < N; x++, j++) {
+                                if (i > nHeight || j > nWidth)
+                                        continue;
+                                datag[nBlock].element[y][x] = green_image[i][j];
                         }
-                        nBlock++;
                 }
+                nBlock++;
         }
+}
 
-        for (i = 0; i <= nHeight; i += N) {
-                for (j = 0; j <= nWidth; j += N) {
-                        i = i >= N ? i - N : i;
-                        for (y = 0; y < N; y++, i++) {
-                                if (j % N == 0 && j != 0)
-                                        j -= N;
-                                for (x = 0; x < N; x++, j++) {
-                                        if (i > nHeight || j > nWidth)
-                                                continue;
-                                        datab[nBlock].element[y][x] = blue_image[i][j];
-                                }
-
+for (i = 0; i <= nHeight; i += N) {
+        for (j = 0; j <= nWidth; j += N) {
+                i = i >= N ? i - N : i;
+                for (y = 0; y < N; y++, i++) {
+                        if (j % N == 0 && j != 0)
+                                j -= N;
+                        for (x = 0; x < N; x++, j++) {
+                                if (i > nHeight || j > nWidth)
+                                        continue;
+                                datab[nBlock].element[y][x] = blue_image[i][j];
                         }
-                        nBlock++;
+
                 }
+                nBlock++;
         }
+}
 
     print_first_channel(datar, nBlocks);
 
