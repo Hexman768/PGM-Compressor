@@ -299,40 +299,39 @@ void writeP5PGM(char *filename, int *width, int *height, int *max, BLOCK2 *data)
 }
 
 void writeP6PGM(char *filename, int *width, int *height, int *max, BLOCK2 *data) {
-        FILE *outFile;
-        int i, j, x, y;
-        if ((outFile = fopen(filename, "wb")) == NULL) {
-                printf("Could not open file: %s\n", filename);
-                return;
+    FILE *outFile;
+    int i, j, x, y;
+    if ((outFile = fopen(filename, "wb")) == NULL) {
+        printf("Could not open file: %s\n", filename);
+        return;
+    }
+
+    fprintf(outFile, "P6\n");
+    fprintf(outFile, "%d %d\n", *width, *height);
+    fprintf(outFile, "%d\n", *max);
+
+    unsigned char *buffer = (unsigned char*)malloc((*width) * (*height) * sizeof(unsigned char) * 3);
+    unsigned char red_i[*height][*width];
+    unsigned char green_i[*height][*width];
+    unsigned char blue_i[*height][*width];
+
+    //print_first_last(blue, nBlocks);
+
+    int nBlock = 0;
+
+    int counter = 0;
+    for (i = 0; i < nBlocks * 3; i++) {
+        for (y = 0; y < N; y++) {
+            for (x = 0; x < N; x++) {
+                buffer[counter] = data[i].element[y][x];
+                counter++;
+            }
         }
+    }
 
-        fprintf(outFile, "P6\n");
-        fprintf(outFile, "%d %d\n", *width, *height);
-        fprintf(outFile, "%d\n", *max);
-
-        unsigned char *buffer = (unsigned char*)malloc((*width) * (*height) * sizeof(unsigned char) * 3);
-        unsigned char red_i[*height][*width];
-        unsigned char green_i[*height][*width];
-        unsigned char blue_i[*height][*width];
-
-        //print_first_last(blue, nBlocks);
-
-        int nBlock = 0;
-
-        int counter = 0;
-        for (i = 0; i < nBlocks * 3; i++) {
-                for (y = 0; y < N; y++) {
-                        for (x = 0; x < N; x++) {
-                                buffer[counter] = data[i].element[y][x];
-                                counter++;
-                        }
-                }
-        }
-
-        fwrite(buffer, sizeof(unsigned char), (*width) * (*height) * 3, outFile);
-        fclose(outFile);
-        free(buffer);
-        
+    fwrite(buffer, sizeof(unsigned char), (*width) * (*height) * 3, outFile);
+    fclose(outFile);
+    free(buffer);
 }
 
 BLOCK2* readP2PGM(FILE *fp, int *width, int *height, int *max, char* outputFile) {
@@ -409,12 +408,12 @@ BLOCK2* readP2PGM(FILE *fp, int *width, int *height, int *max, char* outputFile)
                 }
                 for (x = 0; x < N; x++, j++) { // i and j are wrong
                     /* Check if boundaries are exceeded */
-                            if (i > nHeight || j > nWidth)
+                    if (i > nHeight || j > nWidth)
                         continue;
-                        data[nBlock].element[y][x] = image[i][j];
+                    data[nBlock].element[y][x] = image[i][j];
                 }
             }
-        nBlock++;
+            nBlock++;
         }
     }
 
@@ -437,6 +436,5 @@ BLOCK2* readP2PGM(FILE *fp, int *width, int *height, int *max, char* outputFile)
 
     fwrite(buffer, sizeof(unsigned char), (*width) * (*height), outFile);
     fclose(outFile); */
-
 }
 
