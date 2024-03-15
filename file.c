@@ -163,75 +163,75 @@ BLOCK2* readP6PGM(FILE *inFile, int *width, int *height, int *max, char *outputF
 }
 
 BLOCK2* readP5PGM(FILE *fp, int *width, int *height, int *max, char *outputFile) {
-        FILE *outFile;
-        int i, j, y, x;
-        nWidth = (*width);
-        nHeight = (*height);
-        unsigned char *buffer = (unsigned char *)malloc(((*width) * (*height) * sizeof(unsigned char)));
+    FILE *outFile;
+    int i, j, y, x;
+    nWidth = (*width);
+    nHeight = (*height);
+    unsigned char *buffer = (unsigned char *)malloc(((*width) * (*height) * sizeof(unsigned char)));
 
-        size_t read = fread(buffer, sizeof(unsigned char), (*width) * (*height), fp);
-        printf("P5 Image Written!\n");
-        fclose(fp);
+    size_t read = fread(buffer, sizeof(unsigned char), (*width) * (*height), fp);
+    printf("P5 Image Written!\n");
+    fclose(fp);
 
-        while (nWidth % 8 != 0)
-                nWidth++;
-        while (nHeight % 8 != 0)
-                nHeight++;
+    while (nWidth % 8 != 0)
+        nWidth++;
+    while (nHeight % 8 != 0)
+        nHeight++;
 
-        nBlocks = ((nWidth * nHeight) / 64);
+    nBlocks = ((nWidth * nHeight) / 64);
 
-        BLOCK2 *data = (BLOCK2 *)malloc(sizeof(BLOCK2) * ((N * N) * nBlocks));
+    BLOCK2 *data = (BLOCK2 *)malloc(sizeof(BLOCK2) * ((N * N) * nBlocks));
 
-        unsigned char image[nHeight][nWidth];
+    unsigned char image[nHeight][nWidth];
 
-        int counter = 0;
-        for (i = 0; i < nHeight; i++) {
-                for (j = 0; j < nWidth; j++) {
-                        image[i][j] = buffer[counter];
-                        counter++;
-                }
+    int counter = 0;
+    for (i = 0; i < nHeight; i++) {
+        for (j = 0; j < nWidth; j++) {
+            image[i][j] = buffer[counter];
+            counter++;
         }
+    }
 
-        int nBlock = 0;
-        for (i = 0; i <= nHeight; i += N) {
-                for (j = 0; j <= nWidth; j += N) {
-                        i = i >= N ? i - N : i;
-                        for (y = 0; y < N; y++, i++) {
-                                if (j % N == 0 && j != 0)
-                                        j -= N;
-                                for (x = 0; x < N; x++, j++) {
-                                        if (i > nHeight || j > nWidth)
-                                                continue;
-                                        data[nBlock].element[y][x] = image[i][j];
-                                }
-                        }
-                        nBlock++;
+    int nBlock = 0;
+    for (i = 0; i <= nHeight; i += N) {
+        for (j = 0; j <= nWidth; j += N) {
+            i = i >= N ? i - N : i;
+            for (y = 0; y < N; y++, i++) {
+                if (j % N == 0 && j != 0)
+                    j -= N;
+                for (x = 0; x < N; x++, j++) {
+                    if (i > nHeight || j > nWidth)
+                        continue;
+                    data[nBlock].element[y][x] = image[i][j];
                 }
+            }
+            nBlock++;
         }
-        free(buffer);
+    }
 
-        return data;
+    free(buffer);
+    return data;
 }
 
 void print_first_channel(BLOCK2 *blocks, int blockNum) {
-        int i, j;
-        int byte = 0;
-        for (i = 0; i < N; i ++) {
-                for (j = 0; j < N; j ++) {
-                        //if (byte == 0) {
-                                printf("%d ", blocks[0].element[i][j]);
-                }
-                printf("\n");
+    int i, j;
+    int byte = 0;
+    for (i = 0; i < N; i ++) {
+        for (j = 0; j < N; j ++) {
+            //if (byte == 0) {
+            printf("%d ", blocks[0].element[i][j]);
         }
-        printf("Last Block ...\n");
-        int blockNumber = blockNum - 3;
-        for (i = 0; i < N; i++) {
-                for (j = 0; j < N; j++) {
-                         printf("%d ", blocks[blockNumber].element[i][j]);
+        printf("\n");
+    }
+    printf("Last Block ...\n");
+    int blockNumber = blockNum - 3;
+    for (i = 0; i < N; i++) {
+        for (j = 0; j < N; j++) {
+            printf("%d ", blocks[blockNumber].element[i][j]);
                         
-                }
-                printf("\n");
         }
+        printf("\n");
+    }
 }
 
 void print_first_last(BLOCK2 *blocks, int blockNum) {
@@ -271,27 +271,26 @@ void writeP5PGM(char *filename, int *width, int *height, int *max, BLOCK2 *data)
         for (j = 0; j <= nWidth; j += N) { // max: 464
             if (i >= N)
                 i -= N;
-                for (y = 0; y < N; y++, i++) {
-                if (j % N == 0 && j != 0) {
-                        j -= N;
-            }
+            for (y = 0; y < N; y++, i++) {
+                if (j % N == 0 && j != 0)
+                    j -= N;
                 for (x = 0; x < N; x++, j++) { // i and j are wrong
-                        /* Check if boundaries are exceeded */
-                        if (i > nHeight || j > nWidth)
-                            continue;
-                            //data[nBlock].element[y][x] = image[i][j];
-                                image[i][j] = data[nBlock].element[y][x];
-                    }
-                    }
-                nBlock++;
+                    /* Check if boundaries are exceeded */
+                    if (i > nHeight || j > nWidth)
+                        continue;
+                    //data[nBlock].element[y][x] = image[i][j];
+                    image[i][j] = data[nBlock].element[y][x];
+                }
             }
+            nBlock++;
+        }
     }
     int counter = 0;
     for (i = 0; i < *height; i++) {
-            for (j = 0; j < *width; j++) {
-                    buffer[counter] = image[i][j];
-                    counter++;
-            }
+        for (j = 0; j < *width; j++) {
+            buffer[counter] = image[i][j];
+            counter++;
+        }
     }
 
     fwrite(buffer, sizeof(unsigned char), (*width) * (*height), outFile);
