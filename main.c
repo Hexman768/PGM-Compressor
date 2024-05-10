@@ -2,7 +2,7 @@
 
 int main(int argc, char **argv) {
     if (argc != 3) {
-        printf("Invalid inputs detected, please enter input and output file!");
+        printf("[ERROR] Usage: ./main <input file path> <output file path>");
         return 1;
     }
 
@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
 
     /* Open file for reading */
     if ((fp = fopen(filename, "r")) == NULL) {
-        printf("Could not open file: %s!\n", filename); // We have the file opened
+        printf("Could not open file: %s!\n", filename);
         return 1;
     }
 
