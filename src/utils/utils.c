@@ -21,3 +21,20 @@ void print_buffer(unsigned char *buffer, int *width, int *height)
     }
 }
 
+void img_pad(unsigned char data[MAX][MAX])
+{
+    int i, j;
+    for (i = 0; i < MAX; i++)
+    {
+        for (j = 0; j < MAX; j++)
+        {
+            data[i][j] = 0x0;
+        }
+    }
+}
+
+void breakpoint()
+{
+    printf("Hit Breakpoint\n");
+}
+

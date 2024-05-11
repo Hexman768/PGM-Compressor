@@ -21,7 +21,7 @@ struct zigzag ZigZag[N * N] = {
 	{7,7}
 };
 
-int zz_order(Matrix m, unsigned char *data, int index)
+int img_enc_zz(Matrix m, unsigned char *data, int index)
 {
     int i;
     for (i = index; i < N * N; i++)
@@ -31,7 +31,7 @@ int zz_order(Matrix m, unsigned char *data, int index)
     return i;
 }
 
-Matrix inverse_zz(int *x)
+Matrix img_enc_inv_zz(int *x)
 {
     int    i;
     Matrix m;
@@ -45,7 +45,6 @@ Matrix inverse_zz(int *x)
 void dct(P2PGM *img)
 {
     int i, j, k, l;
-
     float ci, cj, dct1, sum;
 
     for (i = 0; i < N; i++)
@@ -78,7 +77,7 @@ void dct(P2PGM *img)
                     dct1 = img->data[k][l] * 
                         cos((2 * k + 1) * i * M_PI / (2 * N)) *
                         cos((2 * l + 1) * j * M_PI / (2 * N));
-                    sum = sum + dct1;
+                    sum  = sum + dct1;
                 }
             }
             img->data[i][j] = ci * cj * sum;
@@ -88,9 +87,7 @@ void dct(P2PGM *img)
 
 int read_pgm_head(FILE *fp, P2PGM *img)
 {
-    int format    ;
-    int width;
-    int height;
+    int format, width, height;
     char line[LEN];
 
     fgets(line, LEN, fp); // read first line
@@ -116,31 +113,36 @@ int read_pgm_head(FILE *fp, P2PGM *img)
 
 unsigned char* read_p2(FILE *fp, P2PGM *img)
 {
-    int i;
+    int i, size;
 
-    // allocate byte buffer
-    unsigned char *buffer = (unsigned char*) malloc(sizeof(unsigned char) * (img->width * img->height));
+    /* allocate byte buffer */
+    unsigned char *buffer = (unsigned char*) malloc(sizeof(unsigned char) *
+            (img->width * img->height));
 
-    // read all data into buffer
-    for (i = 0; i < (img->width * img->height * sizeof(unsigned char)); i++)
-    {
-        fscanf(fp, "%d", (unsigned char*) &buffer[i]);
-    }
+    size                  = img->width * img->height * sizeof(int);
+    size_t bytes          = fread(buffer, sizeof(unsigned char), size, fp);
 
-    //print_buffer(buffer, width, height);
+    printf("%ld bytes read\n", bytes);
 
-    //allocate pointer array of Matrix sizeof((N * N) * (information / 64))
-    int num_matrix = (img->width * img->height) / 64;
-    Matrix* blocks = (Matrix*) malloc(sizeof(Matrix) * 64 * num_matrix);
-    unsigned char *byte_buffer = (unsigned char*) malloc(sizeof(unsigned char) * (img->width * img->height));
+    /* print buffer */
+    //printf("%s\n", buffer);
+
+    /* allocate pointer array of Matrix sizeof((N * N) * (information / 64)) */
+    int num_matrix             = (img->width * img->height) / 64;
+    Matrix* blocks             = (Matrix*) malloc(sizeof(Matrix) * 64 * num_matrix);
+    unsigned char *byte_buffer = (unsigned char*) malloc(sizeof(unsigned char) *
+            (img->width * img->height));
+
+    breakpoint();
+    img_pad(img->data);
 
     int index = 0;
     for (i = 0; i < num_matrix; i++)
     {
-        index = zz_order(blocks[i], byte_buffer, index);
+        index = img_enc_zz(blocks[i], byte_buffer, index);
     }
 
-    // free memory 
+    /* free memory */
     free(buffer);
     free(blocks);
     return byte_buffer;

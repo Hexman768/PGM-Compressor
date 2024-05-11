@@ -15,16 +15,16 @@ typedef struct P2PGM {
     int width;
     int height;
     int max;
-    int data[MAX][MAX];
+    unsigned char data[MAX][MAX];
 } P2PGM;
 
 struct zigzag {
 	int row, col;
 };
 
-int zz_order(Matrix m, unsigned char *data, int index);
+int img_enc_zz(Matrix m, unsigned char *data, int index);
 
-Matrix inverse_zz(int *x);
+Matrix img_enc_inv_zz(int *x);
 
 int read_pgm_head(FILE *fp, P2PGM *img);
 
