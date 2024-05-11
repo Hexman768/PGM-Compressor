@@ -1,3 +1,4 @@
+#include <assert.h>
 #include "dct.h"
 #include "../utils/utils.h"
 #include <math.h>
@@ -33,6 +34,8 @@ int img_enc_zz(Matrix m, unsigned char *data, int index)
 
 Matrix img_enc_inv_zz(int *x)
 {
+    assert(x);
+
     int    i;
     Matrix m;
     for (i = 0; i < N * N; i++)
@@ -44,6 +47,8 @@ Matrix img_enc_inv_zz(int *x)
 
 void dct(P2PGM *img)
 {
+    assert(img);
+
     int i, j, k, l;
     float ci, cj, dct1, sum;
 
@@ -87,6 +92,8 @@ void dct(P2PGM *img)
 
 int read_pgm_head(FILE *fp, P2PGM *img)
 {
+    assert(fp && img);
+
     int format, width, height;
     char line[LEN];
 
@@ -113,6 +120,8 @@ int read_pgm_head(FILE *fp, P2PGM *img)
 
 unsigned char* read_p2(FILE *fp, P2PGM *img)
 {
+    assert(fp && img);
+
     int i, size;
 
     /* allocate byte buffer */
@@ -121,6 +130,7 @@ unsigned char* read_p2(FILE *fp, P2PGM *img)
 
     size                  = img->width * img->height * sizeof(int);
     size_t bytes          = fread(buffer, sizeof(unsigned char), size, fp);
+    assert(bytes > 0);
 
     printf("%ld bytes read\n", bytes);
 
@@ -136,11 +146,11 @@ unsigned char* read_p2(FILE *fp, P2PGM *img)
     breakpoint();
     img_pad(img->data);
 
-    int index = 0;
+    /* int index = 0;
     for (i = 0; i < num_matrix; i++)
     {
         index = img_enc_zz(blocks[i], byte_buffer, index);
-    }
+    } */
 
     /* free memory */
     free(buffer);
