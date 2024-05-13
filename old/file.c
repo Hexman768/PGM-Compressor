@@ -256,7 +256,7 @@ void writeP5PGM(char *filename, int *width, int *height, int *max, BLOCK2 *data)
     int i, j, x, y;
     if ((outFile = fopen(filename, "wb")) == NULL) {
         printf("Could not open file: %s\n", filename);
-            return;
+        return;
     }
 
     fprintf(outFile, "P5\n");
@@ -267,14 +267,14 @@ void writeP5PGM(char *filename, int *width, int *height, int *max, BLOCK2 *data)
     unsigned char image[*height][*width];
     int nBlock = 0;
 
-     for (i = 0; i <= nHeight; i += N) { // max: 360
-        for (j = 0; j <= nWidth; j += N) { // max: 464
+     for (i = 0; i <= nHeight; i += N) {
+        for (j = 0; j <= nWidth; j += N) {
             if (i >= N)
                 i -= N;
             for (y = 0; y < N; y++, i++) {
                 if (j % N == 0 && j != 0)
                     j -= N;
-                for (x = 0; x < N; x++, j++) { // i and j are wrong
+                for (x = 0; x < N; x++, j++) {
                     /* Check if boundaries are exceeded */
                     if (i > nHeight || j > nWidth)
                         continue;
