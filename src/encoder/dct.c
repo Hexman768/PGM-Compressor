@@ -22,6 +22,17 @@ struct zigzag ZigZag[N * N] = {
 	{7,7}
 };
 
+float q_table[N][N] = {
+    {16,11,10,16,24,40,51,61},
+    {12,12,14,19,26,58,60,55},
+    {14,13,16,24,40,57,69,56},
+    {14,17,22,29,51,87,80,62},
+    {18,22,37,56,68,109,103,77},
+    {24,35,55,64,81,104,113,92},
+    {49,64,78,87,103,121,120,101},
+    {72,92,95,98,112,100,103,99}
+};
+
 int img_enc_zz(Matrix m, unsigned char *data, int index)
 {
     int i;
@@ -45,9 +56,9 @@ Matrix img_enc_inv_zz(int *x)
     return m;
 }
 
-void dct(P2PGM *img)
+void dct(float matrix[N][N])
 {
-    assert(img);
+    assert(matrix);
 
     int i, j, k, l;
     float ci, cj, dct1, sum;
@@ -79,13 +90,34 @@ void dct(P2PGM *img)
             {
                 for (l = 0; l < N; l++)
                 {
-                    dct1 = img->data[k][l] * 
-                        cos((2 * k + 1) * i * M_PI / (2 * N)) *
-                        cos((2 * l + 1) * j * M_PI / (2 * N));
+                    dct1 = matrix[k][l] * 
+                        cos((2 * k + 1) * i * 3.14 / (2 * N)) *
+                        cos((2 * l + 1) * j * 3.14 / (2 * N));
                     sum  = sum + dct1;
                 }
             }
-            img->data[i][j] = ci * cj * sum;
+            matrix[i][j] = ci * cj * sum;
+        }
+    }
+
+    /*for (i = 0; i < N; i++)
+    {
+        for (j = 0; j < N; j++)
+        {
+            printf("%f\t", matrix[i][j]);
+        }
+        printf("\n");
+    }*/
+}
+
+void quantization(float img[N][N])
+{
+    int i, j;
+    for (i = 0; i < N; i++)
+    {
+        for (j = 0; j < N; j++)
+        {
+            img[i][j] = round((img[i][j] / q_table[i][j]));
         }
     }
 }
@@ -140,8 +172,6 @@ unsigned char* read_p2(FILE *fp, P2PGM *img)
     /* allocate pointer array of Matrix sizeof((N * N) * (information / 64)) */
     int num_matrix             = (img->width * img->height) / 64;
     Matrix* blocks             = (Matrix*) malloc(sizeof(Matrix) * 64 * num_matrix);
-    unsigned char *byte_buffer = (unsigned char*) malloc(sizeof(unsigned char) *
-            (img->width * img->height));
 
     breakpoint();
     img_pad(img->data);
@@ -155,6 +185,7 @@ unsigned char* read_p2(FILE *fp, P2PGM *img)
     /* free memory */
     free(buffer);
     free(blocks);
-    return byte_buffer;
+    //return byte_buffer;
+    return NULL;
 }
 

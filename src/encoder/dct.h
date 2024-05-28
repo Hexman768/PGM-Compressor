@@ -5,10 +5,11 @@
 
 #define N 8
 #define MAX 800
+#define BYTE_MAX 255
 #define LEN 128 // line length maximum
 
 typedef struct Matrix {
-    unsigned char element[N][N];
+    int element[N][N];
 } Matrix;
 
 typedef struct P2PGM {
@@ -29,6 +30,10 @@ Matrix img_enc_inv_zz(int *x);
 int read_pgm_head(FILE *fp, P2PGM *img);
 
 unsigned char* read_p2(FILE *fp, P2PGM *img);
+
+void dct(float img[N][N]);
+
+void quantization(float img[N][N]);
 
 #endif
 

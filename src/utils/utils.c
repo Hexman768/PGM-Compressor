@@ -33,8 +33,41 @@ void img_pad(unsigned char data[MAX][MAX])
     }
 }
 
+int pad_matrix(Matrix *img, int value)
+{
+    if (value > BYTE_MAX)
+    {
+        printf("[ERROR] pad_matrix(Matrix *img, int value) only allows a value of up to 255\nValue provided is %d\n", value);
+        return 1;
+    }
+
+    int i, j;
+    for (i = 0; i < N; i++)
+    {
+        for (j = 0; j < N; j++)
+        {
+            img->element[i][j] = value;
+        }
+    }
+    return 0;
+}
+
 void breakpoint()
 {
     printf("Hit Breakpoint\n");
+}
+
+void print_matrix(Matrix *mtx)
+{
+    int i, j;
+    for (i = 0; i < N; i++)
+    {
+        for (j = 0; j < N; j++)
+        {
+            printf("%d ", mtx->element[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
 }
 
