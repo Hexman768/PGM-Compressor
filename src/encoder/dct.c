@@ -21,8 +21,7 @@ struct zigzag ZigZag[N * N] = {
 	{7,7}
 };
 
-int zz_order(Matrix m, unsigned char *data, int index)
-{
+int zz_order(Matrix m, unsigned char *data, int index) {
     int i;
     for (i = index; i < N * N; i++)
     {
@@ -31,8 +30,7 @@ int zz_order(Matrix m, unsigned char *data, int index)
     return i;
 }
 
-Matrix inverse_zz(int *x)
-{
+Matrix inverse_zz(int *x) {
     int    i;
     Matrix m;
     for (i = 0; i < N * N; i++)
@@ -42,39 +40,28 @@ Matrix inverse_zz(int *x)
     return m;
 }
 
-void dct(P2PGM *img)
-{
+void dct(P2PGM *img) {
     int i, j, k, l;
 
     float ci, cj, dct1, sum;
 
-    for (i = 0; i < N; i++)
-    {
-        for (j = 0; j < N; j++)
-        {
-            if (i == 0)
-            {
+    for (i = 0; i < N; i++) {
+        for (j = 0; j < N; j++) {
+            if (i == 0) {
                 ci = 1 / sqrt(N);
-            }
-            else
-            {
+            } else {
                 ci = sqrt(2) / sqrt(N);
             }
 
-            if (j == 0)
-            {
+            if (j == 0) {
                 cj = 1 / sqrt(N);
-            }
-            else
-            {
+            } else {
                 cj = sqrt(2) / sqrt(N);
             }
 
             sum = 0;
-            for (k = 0; k < N; k++)
-            {
-                for (l = 0; l < N; l++)
-                {
+            for (k = 0; k < N; k++) {
+                for (l = 0; l < N; l++) {
                     dct1 = img->data[k][l] * 
                         cos((2 * k + 1) * i * M_PI / (2 * N)) *
                         cos((2 * l + 1) * j * M_PI / (2 * N));
@@ -86,8 +73,7 @@ void dct(P2PGM *img)
     }
 }
 
-int read_pgm_head(FILE *fp, P2PGM *img)
-{
+int read_pgm_head(FILE *fp, P2PGM *img) {
     int format    ;
     int width;
     int height;
@@ -98,8 +84,7 @@ int read_pgm_head(FILE *fp, P2PGM *img)
 
     // skip comments
     fgets(line, LEN, fp);
-    while (line[0] == '#')
-    {
+    while (line[0] == '#') {
         fgets(line, LEN, fp);
     }
 
@@ -114,16 +99,14 @@ int read_pgm_head(FILE *fp, P2PGM *img)
     return 0;
 }
 
-unsigned char* read_p2(FILE *fp, P2PGM *img)
-{
+unsigned char* read_p2(FILE *fp, P2PGM *img) {
     int i;
 
     // allocate byte buffer
     unsigned char *buffer = (unsigned char*) malloc(sizeof(unsigned char) * (img->width * img->height));
 
     // read all data into buffer
-    for (i = 0; i < (img->width * img->height * sizeof(unsigned char)); i++)
-    {
+    for (i = 0; i < (img->width * img->height * sizeof(unsigned char)); i++) {
         fscanf(fp, "%d", (unsigned char*) &buffer[i]);
     }
 
@@ -135,8 +118,7 @@ unsigned char* read_p2(FILE *fp, P2PGM *img)
     unsigned char *byte_buffer = (unsigned char*) malloc(sizeof(unsigned char) * (img->width * img->height));
 
     int index = 0;
-    for (i = 0; i < num_matrix; i++)
-    {
+    for (i = 0; i < num_matrix; i++) {
         index = zz_order(blocks[i], byte_buffer, index);
     }
 
