@@ -1,6 +1,6 @@
 #include "decode.h"
 
-void writeP5PGM(char *filename, int *width, int *height, int *max, BLOCK2 *data) {
+void writeP5PGM(char *filename, int *width, int *height, int *max, Matrix *data) {
     FILE *outFile;
     int i, j, x, y;
     if ((outFile = fopen(filename, "wb")) == NULL) {
@@ -16,8 +16,8 @@ void writeP5PGM(char *filename, int *width, int *height, int *max, BLOCK2 *data)
     unsigned char image[*height][*width];
     int nBlock = 0;
 
-     for (i = 0; i <= nHeight; i += N) {
-        for (j = 0; j <= nWidth; j += N) {
+     for (i = 0; i <= *height; i += N) {
+        for (j = 0; j <= *width; j += N) {
             if (i >= N)
                 i -= N;
             for (y = 0; y < N; y++, i++) {
@@ -25,7 +25,7 @@ void writeP5PGM(char *filename, int *width, int *height, int *max, BLOCK2 *data)
                     j -= N;
                 for (x = 0; x < N; x++, j++) {
                     /* Check if boundaries are exceeded */
-                    if (i > nHeight || j > nWidth)
+                    if (i > *height || j > *width)
                         continue;
                     //data[nBlock].element[y][x] = image[i][j];
                     image[i][j] = data[nBlock].element[y][x];

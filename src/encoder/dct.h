@@ -18,23 +18,17 @@ typedef struct Matrix {
 } Matrix;
 
 /*
- * Type structure that represents the PGM image.
+ * Type structure that represents the PGM image header information
  *
  * width:  Image width
  * height: Image height
  * max:    Max grey value
- * data:   2d array of pixel data
  */
-typedef struct P2PGM {
+typedef struct PGMHEAD {
     int width;
     int height;
     int max;
-    int data[MAX][MAX];
-} P2PGM;
-
-struct zigzag {
-    int row, col;
-};
+} PGMHEAD;
 
 /*
  *  Restructures the data buffer in zig-zag order for the

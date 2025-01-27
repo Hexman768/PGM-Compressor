@@ -73,7 +73,7 @@ void dct(P2PGM *img) {
     }
 }
 
-int read_pgm_head(FILE *fp, P2PGM *img) {
+int read_pgm_head(FILE *fp, PGMHEAD *head) {
     int format    ;
     int width;
     int height;
@@ -89,12 +89,12 @@ int read_pgm_head(FILE *fp, P2PGM *img) {
     }
 
     // read width and height
-    sscanf(line, "%d %d\n", &img->width, &img->height);
+    sscanf(line, "%d %d\n", &head->width, &head->height);
 
     // read max value 
     fgets(line, LEN, fp);
-    sscanf(line, "%d\n", &img->max);
-    echo_info(2, img);
+    sscanf(line, "%d\n", &head->max);
+    echo_info(2, head);
 
     return 0;
 }
