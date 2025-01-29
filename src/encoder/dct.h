@@ -1,8 +1,6 @@
 #ifndef DCT_H
 #define DCT_H
 
-#include <stdio.h>
-
 #define N 8     // Max block size
 #define MAX 800
 #define LEN 128 // line length maximum
@@ -24,11 +22,11 @@ typedef struct Matrix {
  * height: Image height
  * max:    Max grey value
  */
-typedef struct PGMHEAD {
+typedef struct pgm_head_t {
     int width;
     int height;
     int max;
-} PGMHEAD;
+} pgm_head_t;
 
 /*
  *  Restructures the data buffer in zig-zag order for the
@@ -60,7 +58,7 @@ Matrix inverse_zz(int *x);
  *
  *  returns: Status code
  */
-int read_pgm_head(FILE *fp, P2PGM *img);
+int read_pgm_head(FILE *fp, pgm_head_t *img);
 
 /*
  *  Reads the information from p2 PGM image
@@ -70,7 +68,7 @@ int read_pgm_head(FILE *fp, P2PGM *img);
  *
  *  returns: Unsigned byte array of pixel data
  */
-unsigned char* read_p2(FILE *fp, P2PGM *img);
+unsigned char* pgm_p2_read(FILE *fp, pgm_head_t *img);
 
 #endif
 

@@ -1,6 +1,7 @@
-#include "src/encoder/dct.h"
-#include "src/decoder/decode.h"
+#include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+//#include "src/decoder/decode.h"
 
 int main(int argc, char **argv) {
     FILE *fp             ;
@@ -17,7 +18,7 @@ int main(int argc, char **argv) {
     }
 
     // Allocate memory for PGM header struct
-    PGMHEAD *img = malloc(sizeof(*img));
+    pgm_head_t *img = malloc(sizeof(*img));
 
     if (read_pgm_head(fp, img) != 0) {
         fprintf(stderr, "Error reading pgm head\n");
@@ -28,7 +29,7 @@ int main(int argc, char **argv) {
     unsigned char *buffer = read_p2(fp, img);
 
     // Write PGM image
-    writeP5PGM(argv[2], img->width, img->height, img->max, buffer);
+    //writeP5PGM(argv[2], img->width, img->height, img->max, buffer);
 
     fclose(fp);
     free(img);
