@@ -1,6 +1,6 @@
 #include "utils.h"
 
-void echo_info(int format, P2PGM *img)
+void echo_info(int format, pgm_head_t *img)
 {
     printf("P%d\n", format);
     printf("W: %d, H: %d\n", img->width, img->height);

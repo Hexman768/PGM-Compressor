@@ -1,5 +1,11 @@
 CC = gcc
 
+invert:
+	$(CC) -o invert src/invert/invert.c
+
+encode:
+	$(CC) -g -o encode src/encoder/dct.c -lm
+
 all:
-	$(CC) -o main src/encoder/dct.c src/utils/utils.c main.c -lm
+	$(CC) -o main main.c -lm
 
