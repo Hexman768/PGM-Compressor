@@ -1,11 +1,25 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define N 8     // Max block size
 #define NN 64
 #define MAX 800
 #define LEN 128 // line length maximum
+#define PI 3.14159265358979323
+
+/* Standard JPEG luminance quantization table (8x8) */
+static const int BASE_QUANT_TABLE[64] = {
+    16, 11, 10, 16, 24, 40, 51, 61,
+    12, 12, 14, 19, 26, 58, 60, 55,
+    14, 13, 16, 24, 40, 57, 69, 56,
+    14, 17, 22, 29, 51, 87, 80, 62,
+    18, 22, 37, 56, 68, 109, 103, 77,
+    24, 35, 55, 64, 81, 104, 113, 92,
+    49, 64, 78, 87, 103, 121, 120, 101,
+    72, 92, 95, 98, 112, 100, 103, 99
+};
 
 /*
  * Type structure that represents a block of
@@ -13,22 +27,12 @@
  *
  * element: unsigned byte array of pixel data
  */
-typedef struct _pgm_mtx_t {
-    unsigned char element[N][N];
-} pgm_mtx_t;
-
-/*
- * Type structure that represents the PGM image header information
- *
- * width:  Image width
- * height: Image height
- * max:    Max grey value
- */
-typedef struct pgm_head_t {
+typedef struct pgm_img_t {
     int width;
     int height;
     int max;
-} pgm_head_t;
+    unsigned char *pixels;
+} PGMImage;
 
 /*
  * Structure used for zig-zag ordering during jpeg compression.
@@ -131,115 +135,149 @@ int read_pgm_head(FILE *fp, pgm_head_t *head) {
     return 0;
 }
 
-unsigned char* read_p2(FILE *fp, pgm_head_t *img) {
-    int i;
-
-    // allocate byte buffer
-    unsigned char *buffer = (unsigned char*) malloc(sizeof(unsigned char) * (img->width * img->height));
-
-    // read all data into buffer
-    for (i = 0; i < (img->width * img->height * sizeof(unsigned char)); i++) {
-        fscanf(fp, "%d", (unsigned char*) &buffer[i]);
+static PGMImage* read_pgm(const char *filename) {
+    FILE *f = fopen(filename, "rb");
+    if (!f) {
+        perror("fopen");
+        return NULL;
     }
 
-    printf("%s", buffer);
-
-    //print_buffer(buffer, width, height);
-
-    //allocate pointer array of pgm_mtx_t sizeof((N * N) * (information / 64))
-    //int num_matrix = (img->width * img->height) / 64;
-    //pgm_mtx_t* blocks = (pgm_mtx_t*) malloc(sizeof(pgm_mtx_t) * 64 * num_matrix);
-    //unsigned char *byte_buffer = (unsigned char*) malloc(sizeof(unsigned char) * (img->width * img->height));
-
-    //int index = 0;
-    //for (i = 0; i < num_matrix; i++) {
-    //    index = zz_order(blocks[i], byte_buffer, index);
-    //}
-
-    // free memory 
-    //free(buffer);
-    //free(blocks);
-    return buffer;
-}
-
-void writeP5PGM(char *filename, int *width, int *height, int *max, unsigned char *data) {
-    FILE *outFile;
-    int i, j, x, y;
-    if ((outFile = fopen(filename, "wb")) == NULL) {
-        printf("Could not open file: %s\n", filename);
-        return;
+    char magic[4];
+    if (fscanf(f, "$3s", magic) != 1) {
+        fprintf(stderr, "ERROR: Invalid PGM header!\n");
+        fclose(f);
+        return NULL;
     }
 
-    fprintf(outFile, "P5\n");
-    fprintf(outFile, "%d %d\n", *width, *height);
-    fprintf(outFile, "%d\n", *max);
+    if (strcmp(magic, "P2") != 0 && strcmp(magic, "P5") != 0) {
+        fprintf(stderr, "ERROR: Unexpected magic value, expected P2 or P5, got %s\n", magic);
+        fclose(f);
+        return NULL;
+    }
 
-    /*unsigned char *buffer = (unsigned char*)malloc((*width) * (*height) * sizeof(unsigned char));
-    unsigned char image[*height][*width];
-    int nBlock = 0;
+    int is_p5 = (magic[1] == '5');
+    skip_comments(f);
 
-     for (i = 0; i <= *height; i += N) {
-        for (j = 0; j <= *width; j += N) {
-            if (i >= N)
-                i -= N;
-            for (y = 0; y < N; y++, i++) {
-                if (j % N == 0 && j != 0)
-                    j -= N;
-                for (x = 0; x < N; x++, j++) {
-                    //Check if boundaries are exceeded
-                    if (i > *height || j > *width)
-                        continue;
-                    //data[nBlock].element[y][x] = image[i][j];
-                    image[i][j] = data[nBlock].element[y][x];
-                }
+    PGMImage *img = malloc(sizeof(PGMImage));
+    if (!img) {
+        perror("ERROR: Error allocating memory!\n");
+        fclose(f);
+        return NULL;
+    }
+
+    if (fscanf(f, "%d, %d, %d", &img->width, &img->height, &img->max) != 3) {
+        fprintf(stderr, "ERROR: Invalid PGM dimensions\n");
+        fclose(f);
+        return NULL;
+    }
+
+    // skip newline after max
+    fgetc(f);
+
+    if (is_p5) {
+        size_t n = (size_t)width * height;
+        if (max <= 255) {
+            if (fread(img->pixels, 1, n, f) != n) {
+                fprintf(stderr, "ERROR: Bad read\n");
+                free(img->pixels);
+                free(img);
+                fclose(f);
+                return NULL;
             }
-            nBlock++;
+        } else {
+            unsigned short *buffer = malloc((size_t)width * height * sizeof(unsigned short));
+            if (!buffer) {
+                fprintf(stderr, "ERROR: Buffer allocation error\n");
+                free(img->pixels);
+                free(img);
+                fclose(f);
+                return NULL;
+            }
+
+            if (fread(buffer, sizeof(unsigned short), n , f) != n) {
+                free(buffer);
+                free(img->pixels);
+                free(img);
+                fclose(f);
+                return NULL;
+            }
+
+            for (size_t i = 0; i < n; i++) {
+                img->pixels[i] = buffer[i] >> 8;
+            }
+            free(buffer);
+        }
+    } else {
+        // TODO: Complete implementation
+        for (int i = 0; i < img->width * img->height; i++) {
+            int val;
+            if (fscanf(f, "%d", &val) != 1) {
+                fprintf(stderr, "ERROR: Bad read (P2)\n");
+                free(img->pixels);
+                free(img);
+                fclose(f);
+                return NULL;
+            }
+            img->pixels[i] = (unsigned char)(val > 255 ? 255 : val);
         }
     }
-    int counter = 0;
-    for (i = 0; i < *height; i++) {
-        for (j = 0; j < *width; j++) {
-            buffer[counter] = image[i][j];
-            counter++;
-        }
-    }*/
-
-    fwrite(data, sizeof(unsigned char), (*width) * (*height), outFile);
-    free(data);
-    fclose(outFile);
+    fclose(f);
+    return img;
 }
 
 int main(int argc, char **argv) {
-    FILE *fp             ;
-    int format        = 0;
+    FILE *fp;
+    int  format = 0;
 
-    if (argc < 3) {
-        fprintf(stderr, "Usage: ./dct <input file path> <output file path>\n");
+    if (argc != 4) {
+        fprintf(stderr, "Usage: ./compress <input.pgm> <output.pgm> <quality 1-100>\n");
         return 1;
     }
 
-    if ((fp = fopen(argv[1], "r")) == NULL) {
-        fprintf(stderr, "No such file or directory\n");
-        return 2;
+    int quality = atoi(argv[3]);
+    if (quality < 1 || quality > 100) {
+        fprintf(stderr, "ERROR: quality must be between 1 and 100!\n");
+        return 1;
     }
+
+    if (strcmp(argv[1], argv[2]) == 0) {
+        fprintf(stderr, "ERROR: input and output files must be different!\n");
+        return 1;
+    }
+
+    // Read PGM image
+
+    PGMImage *img = read_pgm(argv[1]);
+    if (!img) return 1;
+
+    if (write_data(argv[2, img, quality]) != 0) {
+        free_pgm(img);
+        return 1;
+    }
+
+    //if ((fp = fopen(argv[1], "r")) == NULL) {
+    //    fprintf(stderr, "No such file or directory\n");
+    //    return 2;
+    //}
 
     // Allocate memory for PGM header struct
-    pgm_head_t *img = malloc(sizeof(*img));
+    //pgm_head_t *img = malloc(sizeof(*img));
 
-    if (read_pgm_head(fp, img) != 0) {
-        fprintf(stderr, "Error reading pgm head\n");
-        return 3;
-    }
+    //if (read_pgm_head(fp, img) != 0) {
+    //    fprintf(stderr, "Error reading pgm head\n");
+    //    return 3;
+    //}
 
     // Read image into buffer
-    unsigned char *buffer = read_p2(fp, img);
+    //unsigned char *buffer = read_p2(fp, img);
 
     // Write PGM image
-    writeP5PGM(argv[2], img->width, img->height, img->max, buffer);
+    //writeP5PGM(argv[2], img->width, img->height, img->max, buffer);
 
-    fclose(fp);
+    //fclose(fp);
+    //free(img);
+    //free(buffer);
+    printf("Compressed %dx%d to %s (quality %d)\n", img->width, img->height, argv[2], quality);
     free(img);
-    free(buffer);
     return 0;
 }
-
