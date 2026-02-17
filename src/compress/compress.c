@@ -57,7 +57,7 @@ struct zigzag {
 	{7,7}
 };
 
-int zz_order(pgm_mtx_t m, unsigned char *data, int index) {
+/*int zz_order(pgm_img_t m, unsigned char *data, int index) {
     int i;
     for (i = index; i < N * N; i++)
     {
@@ -74,6 +74,44 @@ pgm_mtx_t inverse_zz(int *x) {
         m.element[ZigZag[i].row][ZigZag[i].col] = x[i];
     }
     return m;
+}*/
+
+/* Skip comments and blank lines in PGM header */
+static int skip_comments(FILE *f) {
+    int c;
+    while ((c = fgetc(f)) == '#' || c == ' ' || c == '\t' || c == '\n') {
+        if (c == '#') {
+            while ((c = fgetc(f)) != '\n' && c != EOF)
+                ;
+        }
+    }
+    ungetc(c, f);
+    return 0;
+}
+
+/* Forward DCT on 8x8 block */
+static void dct2d(double block[N][N]) {
+    double temp[N][N];
+    int u, v, x, y;
+
+    for (u = 0; u < N; u++) {
+        for (v = 0; v < N; v++) {
+            double sum = 0.0;
+            double cu = (u == 0) ? 1.0 / sqrt(2.0) : 1.0;
+            double cv = (v == 0) ? 1.0 / sqrt(2.0) : 1.0;
+
+            for (x = 0; x < N; x++) {
+                for (y = 0; y < N; y++) {
+                    sum += block[x][y] *
+                        cos((2 * x + 1) * u * PI / 16.0) *
+                        cos((2 * y + 1) * v * PI / 16.0);
+                }
+            }
+            temp[u][v] = 0.25 * cu * cv * sum;
+        }
+    }
+
+    memcpy(block, temp, sizeof(temp));
 }
 
 /* Read PGM Image Contents */
@@ -100,14 +138,8 @@ static PGMImage* read_pgm(const char *filename) {
     int is_p5 = (magic[1] == '5');
     skip_comments(f);
 
-    PGMImage *img = malloc(sizeof(PGMImage));
-    if (!img) {
-        perror("ERROR: Error allocating memory!\n");
-        fclose(f);
-        return NULL;
-    }
-
-    if (fscanf(f, "%d, %d, %d", &img->width, &img->height, &img->max) != 3) {
+    int width, height, max;
+    if (fscanf(f, "%d, %d, %d", &width, &height, &max) != 3) {
         fprintf(stderr, "ERROR: Invalid PGM dimensions\n");
         fclose(f);
         return NULL;
@@ -115,6 +147,24 @@ static PGMImage* read_pgm(const char *filename) {
 
     // skip newline after max
     fgetc(f);
+
+    PGMImage *img = malloc(sizeof(PGMImage));
+    if (!img) {
+        perror("ERROR: Error allocating memory!\n");
+        fclose(f);
+        return NULL;
+    }
+
+    img->width = width;
+    img->height = height;
+    img->max = max;
+    img->pixels = malloc((size_t)width * height);
+    if (!img->pixels) {
+        fprintf(stderr, "ERROR: Failed to allocate memory for image pixel data\n");
+        free(img);
+        fclose(f);
+        return NULL;
+    }
 
     if (is_p5) {
         size_t n = (size_t)width * height;
@@ -169,12 +219,32 @@ static PGMImage* read_pgm(const char *filename) {
 
 /* Pad image dimensions to multiple of 8 */
 static void pad_image(PGMImage *img, int *padded_w, int *padded_h) {
-    *padded_w = ((img->width + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE;
-    *padded_h = ((img->height + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE;
+    *padded_w = ((img->width + N - 1) / N) * N;
+    *padded_h = ((img->height + N - 1) / N) * N;
+}
+
+/* Build quantization table scaled by quality (1-100) */
+static void build_quant_table(int quant_table[64], int quality) {
+    double scale;
+    if (quality <= 0) quality = 1;
+    if (quality > 100) quality = 100;
+
+    /* Quality 50 = scale 1.0, quality 100 = minimal quantization */
+    if (quality < 50) {
+        scale = 5000.0 / quality;
+    } else {
+        scale = 200.0 - 2.0 * quality;
+    }
+    scale /= 100.0;
+
+    for (int i = 0; i < 64; i++) {
+        int val = (int)(BASE_QUANT_TABLE[i] * scale);
+        quant_table[i] = (val < 1) ? 1 : val;
+    }
 }
 
 /* Compress and write to .dat file */
-static int write_dat(const char *filename, PGMImage *img, int quality) {
+static int write_data(const char *filename, PGMImage *img, int quality) {
     FILE *f = fopen(filename, "wb");
     if (!f) {
         perror("fopen");
@@ -194,21 +264,21 @@ static int write_dat(const char *filename, PGMImage *img, int quality) {
     fwrite(&padded_h, sizeof(int), 1, f);
     fwrite(&img->width, sizeof(int), 1, f);
     fwrite(&img->height, sizeof(int), 1, f);
-    fwrite(&img->maxval, sizeof(int), 1, f);
+    fwrite(&img->max, sizeof(int), 1, f);
     fwrite(&quality, sizeof(int), 1, f);
     fwrite(quant_table, sizeof(int), 64, f);
 
-    int blocks_x = padded_w / BLOCK_SIZE;
-    int blocks_y = padded_h / BLOCK_SIZE;
+    int blocks_x = padded_w / N;
+    int blocks_y = padded_h / N;
 
     for (int by = 0; by < blocks_y; by++) {
         for (int bx = 0; bx < blocks_x; bx++) {
-            double block[BLOCK_SIZE][BLOCK_SIZE];
+            double block[N][N];
 
-            for (int y = 0; y < BLOCK_SIZE; y++) {
-                for (int x = 0; x < BLOCK_SIZE; x++) {
-                    int px = bx * BLOCK_SIZE + x;
-                    int py = by * BLOCK_SIZE + y;
+            for (int y = 0; y < N; y++) {
+                for (int x = 0; x < N; x++) {
+                    int px = bx * N + x;
+                    int py = by * N + y;
                     if (px < img->width && py < img->height) {
                         block[y][x] = (double)img->pixels[py * img->width + px] - 128.0;
                     } else {
