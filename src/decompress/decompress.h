@@ -1,5 +1,5 @@
-#ifndef DECODE_H
-#define DECODE_H
+#ifndef DECOMPRESS_H
+#define DECOMPRESS_H
 
 /*
  * Constructs and writes a P5 PGM file to the given directory location.
