@@ -75,66 +75,8 @@ pgm_mtx_t inverse_zz(int *x) {
     }
     return m;
 }
-/*
-void dct(pgm_mtx_t *img) {
-    int i, j, k, l;
 
-    float ci, cj, dct1, sum;
-
-    for (i = 0; i < N; i++) {
-        for (j = 0; j < N; j++) {
-            if (i == 0) {
-                ci = 1 / sqrt(N);
-            } else {
-                ci = sqrt(2) / sqrt(N);
-            }
-
-            if (j == 0) {
-                cj = 1 / sqrt(N);
-            } else {
-                cj = sqrt(2) / sqrt(N);
-            }
-
-            sum = 0;
-            for (k = 0; k < N; k++) {
-                for (l = 0; l < N; l++) {
-                    dct1 = img[k][l] * 
-                        cos((2 * k + 1) * i * M_PI / (2 * N)) *
-                        cos((2 * l + 1) * j * M_PI / (2 * N));
-                    sum = sum + dct1;
-                }
-            }
-            img[i][j] = ci * cj * sum;
-        }
-    }
-}*/
-
-int read_pgm_head(FILE *fp, pgm_head_t *head) {
-    int format    ;
-    int width;
-    int height;
-    char line[LEN];
-
-    fgets(line, LEN, fp); // read first line
-    //sscanf(&line[1], "%d", &format);
-
-    // skip comments
-    fgets(line, LEN, fp);
-    while (line[0] == '#') {
-        fgets(line, LEN, fp);
-    }
-
-    // read width and height
-    sscanf(line, "%d %d\n", &head->width, &head->height);
-
-    // read max value 
-    fgets(line, LEN, fp);
-    sscanf(line, "%d\n", &head->max);
-    //echo_info(2, head);
-
-    return 0;
-}
-
+/* Read PGM Image Contents */
 static PGMImage* read_pgm(const char *filename) {
     FILE *f = fopen(filename, "rb");
     if (!f) {
@@ -225,6 +167,78 @@ static PGMImage* read_pgm(const char *filename) {
     return img;
 }
 
+/* Pad image dimensions to multiple of 8 */
+static void pad_image(PGMImage *img, int *padded_w, int *padded_h) {
+    *padded_w = ((img->width + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE;
+    *padded_h = ((img->height + BLOCK_SIZE - 1) / BLOCK_SIZE) * BLOCK_SIZE;
+}
+
+/* Compress and write to .dat file */
+static int write_dat(const char *filename, PGMImage *img, int quality) {
+    FILE *f = fopen(filename, "wb");
+    if (!f) {
+        perror("fopen");
+        return -1;
+    }
+
+    int padded_w, padded_h;
+    pad_image(img, &padded_w, &padded_h);
+
+    int quant_table[64];
+    build_quant_table(quant_table, quality);
+
+    /* Header: magic, width, height, orig_width, orig_height, quality */
+    const char magic[] = "JPGC";
+    fwrite(magic, 1, 4, f);
+    fwrite(&padded_w, sizeof(int), 1, f);
+    fwrite(&padded_h, sizeof(int), 1, f);
+    fwrite(&img->width, sizeof(int), 1, f);
+    fwrite(&img->height, sizeof(int), 1, f);
+    fwrite(&img->maxval, sizeof(int), 1, f);
+    fwrite(&quality, sizeof(int), 1, f);
+    fwrite(quant_table, sizeof(int), 64, f);
+
+    int blocks_x = padded_w / BLOCK_SIZE;
+    int blocks_y = padded_h / BLOCK_SIZE;
+
+    for (int by = 0; by < blocks_y; by++) {
+        for (int bx = 0; bx < blocks_x; bx++) {
+            double block[BLOCK_SIZE][BLOCK_SIZE];
+
+            for (int y = 0; y < BLOCK_SIZE; y++) {
+                for (int x = 0; x < BLOCK_SIZE; x++) {
+                    int px = bx * BLOCK_SIZE + x;
+                    int py = by * BLOCK_SIZE + y;
+                    if (px < img->width && py < img->height) {
+                        block[y][x] = (double)img->pixels[py * img->width + px] - 128.0;
+                    } else {
+                        block[y][x] = -128.0;
+                    }
+                }
+            }
+
+            dct2d(block);
+
+            /* Quantize and write as 4-byte integers */
+            for (int i = 0; i < 64; i++) {
+                int y = i / 8, x = i % 8;
+                int q = (int)round(block[y][x] / quant_table[i]);
+                fwrite(&q, sizeof(int), 1, f);
+            }
+        }
+    }
+
+    fclose(f);
+    return 0;
+}
+
+static void free_pgm(PGMImage *img) {
+    if (img) {
+        free(img->pixels);
+        free(img);
+    }
+}
+
 int main(int argc, char **argv) {
     FILE *fp;
     int  format = 0;
@@ -246,7 +260,6 @@ int main(int argc, char **argv) {
     }
 
     // Read PGM image
-
     PGMImage *img = read_pgm(argv[1]);
     if (!img) return 1;
 
@@ -255,28 +268,6 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    //if ((fp = fopen(argv[1], "r")) == NULL) {
-    //    fprintf(stderr, "No such file or directory\n");
-    //    return 2;
-    //}
-
-    // Allocate memory for PGM header struct
-    //pgm_head_t *img = malloc(sizeof(*img));
-
-    //if (read_pgm_head(fp, img) != 0) {
-    //    fprintf(stderr, "Error reading pgm head\n");
-    //    return 3;
-    //}
-
-    // Read image into buffer
-    //unsigned char *buffer = read_p2(fp, img);
-
-    // Write PGM image
-    //writeP5PGM(argv[2], img->width, img->height, img->max, buffer);
-
-    //fclose(fp);
-    //free(img);
-    //free(buffer);
     printf("Compressed %dx%d to %s (quality %d)\n", img->width, img->height, argv[2], quality);
     free(img);
     return 0;
