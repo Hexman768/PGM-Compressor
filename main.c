@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 //#include "src/decoder/decode.h"
+// testing github authentication
 
 int main(int argc, char **argv) {
     FILE *fp             ;
