@@ -123,7 +123,7 @@ static PGMImage* read_pgm(const char *filename) {
     }
 
     char magic[4];
-    if (fscanf(f, "$3s", magic) != 1) {
+    if (fscanf(f, "%3s", magic) != 1) {
         fprintf(stderr, "ERROR: Invalid PGM header!\n");
         fclose(f);
         return NULL;
@@ -139,7 +139,7 @@ static PGMImage* read_pgm(const char *filename) {
     skip_comments(f);
 
     int width, height, max;
-    if (fscanf(f, "%d, %d, %d", &width, &height, &max) != 3) {
+    if (fscanf(f, "%d %d %d", &width, &height, &max) != 3) {
         fprintf(stderr, "ERROR: Invalid PGM dimensions\n");
         fclose(f);
         return NULL;
@@ -333,7 +333,7 @@ int main(int argc, char **argv) {
     PGMImage *img = read_pgm(argv[1]);
     if (!img) return 1;
 
-    if (write_data(argv[2, img, quality]) != 0) {
+    if (write_data(argv[2], img, quality) != 0) {
         free_pgm(img);
         return 1;
     }
