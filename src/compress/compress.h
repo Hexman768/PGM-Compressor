@@ -1,5 +1,5 @@
-#ifndef DCT_H
-#define DCT_H
+#ifndef COMPRESS_H
+#define COMPRESS_H
 
 #define N 8     // Max block size
 #define MAX 800
